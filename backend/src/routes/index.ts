@@ -7,14 +7,17 @@ import customerRouter from './customers'
 import orderRouter from './order'
 import productRouter from './product'
 import uploadRouter from './upload'
+import { getCsrfToken } from '../controllers/csrf-token'
+import { doubleCsrfProtection } from '../middlewares/csrf-protection'
 
 const router = Router()
 
 router.use('/auth', authRouter)
-router.use('/product', productRouter)
+router.use('/product', doubleCsrfProtection, productRouter)
 router.use('/order', auth, orderRouter)
 router.use('/upload', auth, uploadRouter)
-router.use('/customers', auth, customerRouter)
+router.use('/customers', doubleCsrfProtection, auth, customerRouter)
+router.use('/csrf-token', getCsrfToken)
 
 router.use((_req: Request, _res: Response, next: NextFunction) => {
     next(new NotFoundError('Маршрут не найден'))

@@ -14,7 +14,7 @@ export default function serveStatic(baseDir: string) {
                 return next()
             }
             // Файл существует, отправляем его клиенту
-            return res.sendFile(filePath, (err) => {
+            return res.sendFile(filePath, () => {
                 if (err) {
                     next(err)
                 }

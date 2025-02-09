@@ -2,7 +2,7 @@ import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
 // eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/
+export const phoneRegExp = /^(\+7\s)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$/
 
 export enum PaymentType {
     Card = 'card',
@@ -106,9 +106,20 @@ export const validateUserBody = celebrate({
             'string.min': 'Минимальная длина поля "name" - 2',
             'string.max': 'Максимальная длина поля "name" - 30',
         }),
-        password: Joi.string().min(6).required().messages({
-            'string.empty': 'Поле "password" должно быть заполнено',
-        }),
+        password: Joi.string()
+            .min(8)
+            .max(20)
+            .regex(/[A-Z]/)
+            .regex(/[a-z]/)
+            .regex(/\d/)
+            .regex(/[\W_]/)
+            .required()
+            .messages({
+                'string.empty': 'Поле "password" должно быть заполнено',
+                'string.min': 'Пароль должен быть не менее 6 символов',
+                'string.max': 'Пароль должен быть не более 20 символов',
+                'string.pattern.base': 'Пароль должен содержать хотя бы одну заглавную букву, одну цифру и один специальный символ'
+            }),
         email: Joi.string()
             .required()
             .email()
@@ -128,8 +139,19 @@ export const validateAuthentication = celebrate({
             .messages({
                 'string.required': 'Поле "email" должно быть заполнено',
             }),
-        password: Joi.string().required().messages({
-            'string.empty': 'Поле "password" должно быть заполнено',
-        }),
+        password: Joi.string()
+            .min(8)
+            .max(20)
+            .regex(/[A-Z]/)
+            .regex(/[a-z]/)
+            .regex(/\d/)
+            .regex(/[\W_]/)
+            .required()
+            .messages({
+                'string.empty': 'Поле "password" должно быть заполнено',
+                'string.min': 'Пароль должен быть не менее 6 символов',
+                'string.max': 'Пароль должен быть не более 20 символов',
+                'string.pattern.base': 'Пароль должен содержать хотя бы одну заглавную букву, одну цифру и один специальный символ'
+            }),
     }),
 })

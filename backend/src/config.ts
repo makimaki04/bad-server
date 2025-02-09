@@ -1,3 +1,4 @@
+import { DoubleCsrfConfigOptions } from 'csrf-csrf'
 import { CookieOptions } from 'express'
 import ms from 'ms'
 
@@ -8,6 +9,8 @@ export const ACCESS_TOKEN = {
     secret: process.env.AUTH_ACCESS_TOKEN_SECRET || 'secret-dev',
     expiry: process.env.AUTH_ACCESS_TOKEN_EXPIRY || '10m',
 }
+export const { ORIGIN_ALLOW = 'http://localhost:5173'} = process.env;
+export const JSON_BODY_LIMIT = '100kb'
 export const REFRESH_TOKEN = {
     secret: process.env.AUTH_REFRESH_TOKEN_SECRET || 'secret-dev',
     expiry: process.env.AUTH_REFRESH_TOKEN_EXPIRY || '7d',
@@ -22,3 +25,24 @@ export const REFRESH_TOKEN = {
         } as CookieOptions,
     },
 }
+
+export const doubleCsrfOptions: DoubleCsrfConfigOptions = {
+    getSecret: () => process.env.CSRF_SECRET || 'default_secret_key',
+    cookieName: 'XSRF-TOKEN',
+    cookieOptions: {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+    },
+};
+
+export const UPLOAD_FILE_TYPES = [
+    'image/png',
+    'image/jpg',
+    'image/jpeg',
+    'image/gif',
+    'image/svg+xml',
+]
+
+export const MAX_UPLOAD_FILE_SIZE = 5 * 1024 * 1024;

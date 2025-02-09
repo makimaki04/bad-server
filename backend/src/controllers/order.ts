@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { FilterQuery, Error as MongooseError, Types } from 'mongoose'
+import { escape } from 'validator'
 import BadRequestError from '../errors/bad-request-error'
 import NotFoundError from '../errors/not-found-error'
 import Order, { IOrder } from '../models/order'
@@ -188,7 +189,7 @@ export const getOrdersCurrentUser = async (
             const searchRegex = new RegExp(search as string, 'i')
             const searchNumber = Number(search)
             const products = await Product.find({ title: searchRegex })
-            const productIds = products.map((product) => product._id)
+            const productIds: Types.ObjectId[] = products.map((product) => product._id as Types.ObjectId)
 
             orders = orders.filter((order) => {
                 // eslint-disable-next-line max-len
@@ -295,7 +296,7 @@ export const createOrder = async (
             req.body
 
         items.forEach((id: Types.ObjectId) => {
-            const product = products.find((p) => p._id.equals(id))
+            const product = products.find((p: IProduct) => p._id.equals(id))
             if (!product) {
                 throw new BadRequestError(`Товар с id ${id} не найден`)
             }
@@ -315,7 +316,7 @@ export const createOrder = async (
             payment,
             phone,
             email,
-            comment,
+            comment: escape(comment),
             customer: userId,
             deliveryAddress: address,
         })
