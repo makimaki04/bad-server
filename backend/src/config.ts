@@ -11,6 +11,7 @@ export const ACCESS_TOKEN = {
 }
 export const { ORIGIN_ALLOW = 'http://localhost:5173'} = process.env;
 export const JSON_BODY_LIMIT = '100kb'
+export const MAX_LIMIT = 10
 export const REFRESH_TOKEN = {
     secret: process.env.AUTH_REFRESH_TOKEN_SECRET || 'secret-dev',
     expiry: process.env.AUTH_REFRESH_TOKEN_EXPIRY || '7d',
