@@ -1,4 +1,4 @@
-import { MAX_LIMIT } from "config";
+import { MAX_LIMIT } from "../config";
 import { NextFunction, Request, Response } from "express";
 
 export function queryLimit(req: Request, res: Response, next: NextFunction) {
