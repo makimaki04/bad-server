@@ -121,15 +121,9 @@ const deleteRefreshTokenInUser = async (
 // GET  /auth/logout
 const logout = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        res.clearCookie(REFRESH_TOKEN.cookie.name)
         await deleteRefreshTokenInUser(req, res, next)
-        const expireCookieOptions = {
-            ...REFRESH_TOKEN.cookie.options,
-            maxAge: -1,
-        }
-        res.cookie(REFRESH_TOKEN.cookie.name, '', expireCookieOptions)
-        res.status(200).json({
-            success: true,
-        })
+        res.status(200).json({ success: true })
     } catch (error) {
         next(error)
     }
