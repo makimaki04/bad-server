@@ -24,8 +24,6 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
             REFRESH_TOKEN.cookie.options
         )
 
-        getCsrfToken(req, res);
-
         return res.json({
             success: true,
             user,
@@ -50,8 +48,6 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
             refreshToken,
             REFRESH_TOKEN.cookie.options
         )
-
-        getCsrfToken(req, res);
 
         return res.status(constants.HTTP_STATUS_CREATED).json({
             success: true,

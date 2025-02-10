@@ -33,7 +33,6 @@ export type ApiListResponse<Type> = {
 class Api {
     private readonly baseUrl: string
     protected options: RequestInit
-    protected token = ''
 
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
@@ -54,7 +53,6 @@ class Api {
             const token = await response.json()
 
             console.log('CSRF Token:', token)
-            this.token = token;
             this.options = {
                 headers: {
                     ...((options.headers as object) ?? {}),
