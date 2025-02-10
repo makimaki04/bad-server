@@ -11,7 +11,7 @@ import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
 import { limiter } from './middlewares/limiter'
 import mongoSanitize from 'express-mongo-sanitize'
-import queryLimit from './middlewares/query-limit'
+import { queryLimit, validateQueryParams } from './middlewares/query-limit'
 
 const { PORT = 3000 } = process.env
 const app = express()
@@ -30,6 +30,7 @@ app.use(urlencoded({ extended: true }))
 app.use(json({ limit: JSON_BODY_LIMIT }))
 app.use(mongoSanitize())
 app.use(queryLimit)
+app.use(validateQueryParams)
 app.use(routes)
 app.use(errors())
 app.use(errorHandler)
