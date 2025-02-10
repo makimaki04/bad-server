@@ -13,18 +13,22 @@ export function queryLimit(req: Request, res: Response, next: NextFunction) {
 
 const forbiddenOperators = ['$expr', '$function', '$where', '$regex'];
 
-function containsForbiddenOperators(obj: any): boolean {
-    if (typeof obj === 'object' && obj !== null) {
-        return Object.keys(obj).some(key =>
-            forbiddenOperators.some(op => key.includes(op)) || containsForbiddenOperators(obj[key])
-        );
-    }
-    return false;
+function checkQuery(obj: any) {
+    Object.keys(obj).forEach((key) => {
+        if (forbiddenOperators.includes(key)) {
+            throw new Error('Использование недопустимого оператора');
+        }
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+            checkQuery(obj[key]);
+        }
+    });
 }
 
 export function validateQueryParams(req: Request, res: Response, next: NextFunction) {
-    if (containsForbiddenOperators(req.query)) {
-        return res.status(400).json({ error: 'Invalid query parameter' });
+    try {
+        checkQuery(req.query);
+        next();
+    } catch (error) {
+        res.status(400).json({ error: (error as Error).message });
     }
-    next();
 }
