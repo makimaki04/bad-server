@@ -11,7 +11,7 @@ import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
 import { limiter } from './middlewares/limiter'
 import mongoSanitize from 'express-mongo-sanitize'
-import { queryLimit, validateQueryParams } from './middlewares/query-limit'
+import { validateQueryParams } from './middlewares/query-limit'
 
 const { PORT = 3000 } = process.env
 const app = express()
@@ -20,7 +20,7 @@ app.use(limiter)
 app.use(cookieParser())
 app.use(
     cors({ 
-        origin: ORIGIN_ALLOW || 'http://localhost:5173', 
+        origin: ORIGIN_ALLOW, 
         credentials: true
     })
 )
@@ -28,7 +28,6 @@ app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json({ limit: JSON_BODY_LIMIT }))
 app.use(mongoSanitize())
-app.use(queryLimit)
 app.use(validateQueryParams)
 app.use(routes)
 app.use(errors())
