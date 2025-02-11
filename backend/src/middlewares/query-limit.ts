@@ -3,13 +3,10 @@ import { MAX_LIMIT } from "../config";
 import { NextFunction, Request, Response } from "express";
 
 export function queryLimit(req: Request, res: Response, next: NextFunction) {
-    if (req.query.limit) {
-        const limit = Number(req.query.limit);
-        if (limit > MAX_LIMIT) {
-            req.query.limit = MAX_LIMIT.toString();
-        }
+    const limit = parseInt(req.query.limit as string, 10);
+    if (isNaN(limit) || limit > MAX_LIMIT) {
+        req.query.limit = MAX_LIMIT.toString();
     }
-
     next();
 }
 
