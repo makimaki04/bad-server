@@ -1,3 +1,4 @@
+import BadRequestError from "errors/bad-request-error";
 import { MAX_LIMIT } from "../config";
 import { NextFunction, Request, Response } from "express";
 
@@ -13,22 +14,14 @@ export function queryLimit(req: Request, res: Response, next: NextFunction) {
 
 const forbiddenOperators = ['$expr', '$function', '$where', '$regex'];
 
-function checkQuery(obj: any) {
-    Object.keys(obj).forEach((key) => {
-        if (forbiddenOperators.includes(key)) {
-            throw new Error('Использование недопустимого оператора');
-        }
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-            checkQuery(obj[key]);
-        }
-    });
-}
-
 export function validateQueryParams(req: Request, res: Response, next: NextFunction) {
-    try {
-        checkQuery(req.query);
+    const keys = Object.keys(req.query)
+
+    keys.forEach((key) => {
+        if (forbiddenOperators.includes(key) || req.query[key] === 'object') {
+            throw new BadRequestError('Использование недопустимого оператора');
+        }
+
         next();
-    } catch (error) {
-        res.status(400).json({ error: (error as Error).message });
-    }
+    })
 }
