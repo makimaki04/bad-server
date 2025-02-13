@@ -14,7 +14,7 @@ import { Role } from '../models/user'
 const router = Router()
 
 router.use('/auth', authRouter)
-router.use('/product', doubleCsrfProtection, productRouter)
+router.use('/product', productRouter)
 router.use('/order', auth, orderRouter)
 router.use('/upload', auth, uploadRouter)
 router.use('/customers', roleGuardMiddleware(Role.Admin), auth, customerRouter)
