@@ -1,9 +1,22 @@
+import { faker } from '@faker-js/faker'
+import { MAX_UPLOAD_FILE_SIZE, UPLOAD_FILE_TYPES } from '../config'
 import { Request, Express } from 'express'
 import multer, { FileFilterCallback } from 'multer'
-import { join } from 'path'
+import { extname, join } from 'path'
+import fs from 'fs'
+import { mkdirp } from 'mkdirp'
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
+
+const newDir = join(
+    __dirname,
+    process.env.UPLOAD_PATH_TEMP
+        ? `../public/${process.env.UPLOAD_PATH_TEMP}`
+        : '../public'
+)
+
+mkdirp.sync(newDir);
 
 const storage = multer.diskStorage({
     destination: (
@@ -11,15 +24,7 @@ const storage = multer.diskStorage({
         _file: Express.Multer.File,
         cb: DestinationCallback
     ) => {
-        cb(
-            null,
-            join(
-                __dirname,
-                process.env.UPLOAD_PATH_TEMP
-                    ? `../public/${process.env.UPLOAD_PATH_TEMP}`
-                    : '../public'
-            )
-        )
+        cb(null, newDir)
     },
 
     filename: (
@@ -27,28 +32,25 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        cb(null, file.originalname)
+        cb(null, faker.string.uuid().concat(extname(file.originalname)))
     },
 })
 
-const types = [
-    'image/png',
-    'image/jpg',
-    'image/jpeg',
-    'image/gif',
-    'image/svg+xml',
-]
 
 const fileFilter = (
     _req: Request,
     file: Express.Multer.File,
     cb: FileFilterCallback
 ) => {
-    if (!types.includes(file.mimetype)) {
+    if (!UPLOAD_FILE_TYPES.includes(file.mimetype)) {
         return cb(null, false)
     }
 
     return cb(null, true)
 }
 
-export default multer({ storage, fileFilter })
+const limits = {
+    fileSize: MAX_UPLOAD_FILE_SIZE
+}
+
+export default multer({ storage, fileFilter, limits })

@@ -5,7 +5,9 @@ import {
     getCustomers,
     updateCustomer,
 } from '../controllers/customers'
-import auth from '../middlewares/auth'
+import auth, { roleGuardMiddleware } from '../middlewares/auth'
+import { doubleCsrfProtection } from '../middlewares/csrf-protection'
+import { Role } from '../models/user'
 
 const customerRouter = Router()
 
