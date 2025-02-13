@@ -11,6 +11,7 @@ export const ACCESS_TOKEN = {
 }
 export const ORIGIN_ALLOW  = process.env.ORIGIN_ALLOW || 'http://localhost:5173';
 export const JSON_BODY_LIMIT = '100kb';
+export const REQUEST_LIMIT = 40;
 export const MAX_LIMIT = 10;
 export const REFRESH_TOKEN = {
     secret: process.env.AUTH_REFRESH_TOKEN_SECRET || 'secret-dev',
@@ -26,6 +27,17 @@ export const REFRESH_TOKEN = {
         } as CookieOptions,
     },
 }
+
+export const ALLOWED_HEADERS = [
+            "Authorization",
+            "Content-Type",
+            "X-CSRF-Token",
+            "X-Requested-With",
+            "Referer",
+            "Origin",
+            "Accept",
+            "Cookie"
+        ];
 
 export const doubleCsrfOptions: DoubleCsrfConfigOptions = {
     getSecret: () => process.env.CSRF_SECRET || 'default_secret_key',

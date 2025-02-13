@@ -5,7 +5,7 @@ import 'dotenv/config'
 import express, { json, urlencoded } from 'express'
 import mongoose from 'mongoose'
 import path from 'path'
-import { DB_ADDRESS, JSON_BODY_LIMIT, ORIGIN_ALLOW } from './config'
+import { ALLOWED_HEADERS, DB_ADDRESS, JSON_BODY_LIMIT, ORIGIN_ALLOW } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
@@ -17,10 +17,15 @@ const app = express()
 
 app.use(limiter)
 app.use(
-    cors({ 
-        origin: ORIGIN_ALLOW, 
+    cors({
+        origin: ORIGIN_ALLOW,
         credentials: true,
         methods: "GET, HEAD, PUT, PATCH, POST, DELETE",
+        allowedHeaders: ALLOWED_HEADERS,
+        exposedHeaders: [
+            "access-control-allow-origin",
+            "X-CSRF-Token"
+        ]
     })
 )
 app.use(cookieParser())
