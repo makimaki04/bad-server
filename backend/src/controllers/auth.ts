@@ -9,8 +9,7 @@ import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
 import User from '../models/user'
-import { randomBytes } from 'crypto'
-
+import { getCsrfToken } from './csrf-token'
 
 // POST /auth/login
 const login = async (req: Request, res: Response, next: NextFunction) => {
@@ -19,14 +18,11 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
         const user = await User.findUserByCredentials(email, password)
         const accessToken = user.generateAccessToken()
         const refreshToken = await user.generateRefreshToken()
-
         res.cookie(
             REFRESH_TOKEN.cookie.name,
             refreshToken,
             REFRESH_TOKEN.cookie.options
         )
-
-        res.cookie('csrfToken', generateCsrfToken())
 
         return res.json({
             success: true,
@@ -52,8 +48,6 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
             refreshToken,
             REFRESH_TOKEN.cookie.options
         )
-
-        res.cookie('csrfToken', generateCsrfToken())
 
         return res.status(constants.HTTP_STATUS_CREATED).json({
             success: true,
@@ -223,9 +217,4 @@ export {
     refreshAccessToken,
     register,
     updateCurrentUser,
-}
-
-
-export function generateCsrfToken() {
-    return randomBytes(32).toString('hex')
 }
