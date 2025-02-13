@@ -19,7 +19,7 @@ export const getOrders = async (
     try {
         const {
             page = 1,
-            limit = MAX_LIMIT,
+            limit = 5,
             sortField = 'createdAt',
             sortOrder = 'desc',
             status,
@@ -32,7 +32,7 @@ export const getOrders = async (
 
         const filters: FilterQuery<Partial<IOrder>> = {}
 
-        const maxLimit = Math.min(Number(limit), 10).toString;
+        const maxLimit = Math.min(Number(limit), 5).toString;
 
         if (status) {
             if (typeof status === 'object') {
