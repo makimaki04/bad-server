@@ -16,13 +16,13 @@ const { PORT = 3000 } = process.env
 const app = express()
 
 app.use(limiter)
-app.use(cookieParser())
 app.use(
     cors({ 
         origin: ORIGIN_ALLOW, 
         credentials: true
     })
 )
+app.use(cookieParser())
 app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json({ limit: JSON_BODY_LIMIT }))

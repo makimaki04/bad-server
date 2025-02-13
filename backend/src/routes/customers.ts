@@ -13,7 +13,7 @@ const customerRouter = Router()
 
 customerRouter.get('/', auth, getCustomers)
 customerRouter.get('/:id', auth, getCustomerById)
-customerRouter.patch('/:id', auth, updateCustomer)
-customerRouter.delete('/:id', auth, deleteCustomer)
+customerRouter.patch('/:id', doubleCsrfProtection, auth, updateCustomer)
+customerRouter.delete('/:id',  doubleCsrfProtection, auth, deleteCustomer)
 
 export default customerRouter

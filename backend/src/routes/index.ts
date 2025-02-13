@@ -17,7 +17,7 @@ router.use('/auth', authRouter)
 router.use('/product', doubleCsrfProtection, productRouter)
 router.use('/order', auth, orderRouter)
 router.use('/upload', auth, uploadRouter)
-router.use('/customers', doubleCsrfProtection, roleGuardMiddleware(Role.Admin), auth, customerRouter)
+router.use('/customers', roleGuardMiddleware(Role.Admin), auth, customerRouter)
 router.use('/csrf-token', getCsrfToken)
 
 router.use((_req: Request, _res: Response, next: NextFunction) => {

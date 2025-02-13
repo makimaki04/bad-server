@@ -15,7 +15,7 @@ export const getCustomers = async (
     try {
         const {
             page = 1,
-            limit = 10,
+            limit =9,
             sortField = 'createdAt',
             sortOrder = 'desc',
             registrationDateFrom,
@@ -31,7 +31,7 @@ export const getCustomers = async (
 
         const filters: FilterQuery<Partial<IUser>> = {}
 
-        const maxLimit = Math.min(Number(limit), 10).toString()
+        const maxLimit = Math.min(Number(limit), 9).toString()
 
         if (registrationDateFrom) {
             filters.createdAt = {
