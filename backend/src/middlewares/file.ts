@@ -1,5 +1,5 @@
-import { faker } from '@faker-js/faker'
 import { MAX_UPLOAD_FILE_SIZE, UPLOAD_FILE_TYPES } from '../config'
+import { v4 as uuidv4 } from 'uuid'
 import { Request, Express } from 'express'
 import multer, { FileFilterCallback } from 'multer'
 import { extname, join } from 'path'
@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        cb(null, faker.string.uuid().concat(extname(file.originalname)))
+        cb(null, uuidv4().concat(extname(file.originalname)))
     },
 })
 
