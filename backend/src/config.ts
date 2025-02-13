@@ -59,3 +59,5 @@ export const UPLOAD_FILE_TYPES = [
 ]
 
 export const MAX_UPLOAD_FILE_SIZE = 5 * 1024 * 1024;
+
+export const MIN_UPLOAD_FILE_SIZE = 2 * 1024;
