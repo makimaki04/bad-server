@@ -1,97 +1,217 @@
+import crypto from 'crypto'
 import { NextFunction, Request, Response } from 'express'
+import { constants } from 'http2'
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Model, Types } from 'mongoose'
-import { ACCESS_TOKEN } from '../config'
-import ForbiddenError from '../errors/forbidden-error'
+import { Error as MongooseError } from 'mongoose'
+import { REFRESH_TOKEN } from '../config'
+import BadRequestError from '../errors/bad-request-error'
+import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
-import UserModel, { Role } from '../models/user'
+import User from '../models/user'
 
-// есть файл middlewares/auth.js, в нём мидлвэр для проверки JWT;
-
-const auth = async (req: Request, res: Response, next: NextFunction) => {
-    let payload: JwtPayload | null = null
-    const authHeader = req.header('Authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-        return next(new UnauthorizedError('Невалидный токен'))
-    }
+// POST /auth/login
+const login = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const accessTokenParts = authHeader.split(' ')
-        const aTkn = accessTokenParts[1]
-        payload = jwt.verify(aTkn, ACCESS_TOKEN.secret) as JwtPayload
-
-        const user = await UserModel.findOne(
-            {
-                _id: new Types.ObjectId(payload.sub),
-            },
-            { password: 0, salt: 0 }
+        const { email, password } = req.body
+        const user = await User.findUserByCredentials(email, password)
+        const accessToken = user.generateAccessToken()
+        const refreshToken = await user.generateRefreshToken()
+        res.cookie(
+            REFRESH_TOKEN.cookie.name,
+            refreshToken,
+            REFRESH_TOKEN.cookie.options
         )
+        return res.json({
+            success: true,
+            user,
+            accessToken,
+        })
+    } catch (err) {
+        return next(err)
+    }
+}
 
-        if (!user) {
-            return next(new ForbiddenError('Нет доступа'))
-        }
-        res.locals.user = user
+// POST /auth/register
+const register = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { email, password, name } = req.body
+        const newUser = new User({ email, password, name })
+        await newUser.save()
+        const accessToken = newUser.generateAccessToken()
+        const refreshToken = await newUser.generateRefreshToken()
 
-        return next()
+        res.cookie(
+            REFRESH_TOKEN.cookie.name,
+            refreshToken,
+            REFRESH_TOKEN.cookie.options
+        )
+        return res.status(constants.HTTP_STATUS_CREATED).json({
+            success: true,
+            user: newUser,
+            accessToken,
+        })
     } catch (error) {
-        if (error instanceof Error && error.name === 'TokenExpiredError') {
-            return next(new UnauthorizedError('Истек срок действия токена'))
+        if (error instanceof MongooseError.ValidationError) {
+            return next(new BadRequestError(error.message))
         }
-        return next(new UnauthorizedError('Необходима авторизация'))
+        if (error instanceof Error && error.message.includes('E11000')) {
+            return next(
+                new ConflictError('Пользователь с таким email уже существует')
+            )
+        }
+        return next(error)
     }
 }
 
-export function roleGuardMiddleware(...roles: Role[]) {
-    return (_req: Request, res: Response, next: NextFunction) => {
-        if (!res.locals.user) {
-            return next(new UnauthorizedError('Необходима авторизация'))
-        }
-
-        const hasAccess = roles.some((role) =>
-            res.locals.user.roles.includes(role)
+// GET /auth/user
+const getCurrentUser = async (
+    _req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const userId = res.locals.user._id
+        const user = await User.findById(userId).orFail(
+            () =>
+                new NotFoundError(
+                    'Пользователь по заданному id отсутствует в базе'
+                )
         )
-
-        if (!hasAccess) {
-            return next(new ForbiddenError('Доступ запрещен'))
-        }
-
-        return next()
+        res.json({ user, success: true })
+    } catch (error) {
+        next(error)
     }
 }
 
-export function currentUserAccessMiddleware<T>(
-    model: Model<T>,
-    idProperty: string,
-    userProperty: keyof T
-) {
-    return async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params[idProperty]
+// Можно лучше: вынести общую логику получения данных из refresh токена
+const deleteRefreshTokenInUser = async (
+    req: Request,
+    _res: Response,
+    _next: NextFunction
+) => {
+    const { cookies } = req
+    const rfTkn = cookies[REFRESH_TOKEN.cookie.name]
 
-        if (!res.locals.user) {
-            return next(new UnauthorizedError('Необходима авторизация'))
+    if (!rfTkn) {
+        throw new UnauthorizedError('Не валидный токен')
+    }
+
+    const decodedRefreshTkn = jwt.verify(
+        rfTkn,
+        REFRESH_TOKEN.secret
+    ) as JwtPayload
+    const user = await User.findOne({
+        _id: decodedRefreshTkn._id,
+    }).orFail(() => new UnauthorizedError('Пользователь не найден в базе'))
+
+    const rTknHash = crypto
+        .createHmac('sha256', REFRESH_TOKEN.secret)
+        .update(rfTkn)
+        .digest('hex')
+
+    user.tokens = user.tokens.filter((tokenObj) => tokenObj.token !== rTknHash)
+
+    await user.save()
+
+    return user
+}
+
+// Реализация удаления токена из базы может отличаться
+// GET  /auth/logout
+const logout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await deleteRefreshTokenInUser(req, res, next)
+        const expireCookieOptions = {
+            ...REFRESH_TOKEN.cookie.options,
+            maxAge: -1,
         }
+        res.cookie(REFRESH_TOKEN.cookie.name, '', expireCookieOptions)
+        res.status(200).json({
+            success: true,
+        })
+    } catch (error) {
+        next(error)
+    }
+}
 
-        if (res.locals.user.roles.includes(Role.Admin)) {
-            return next()
-        }
-
-        const entity = await model.findById(id)
-
-        if (!entity) {
-            return next(new NotFoundError('Не найдено'))
-        }
-
-        const userEntityId = entity[userProperty] as Types.ObjectId
-        const hasAccess = new Types.ObjectId(res.locals.user.id).equals(
-            userEntityId
+// GET  /auth/token
+const refreshAccessToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const userWithRefreshTkn = await deleteRefreshTokenInUser(
+            req,
+            res,
+            next
         )
-
-        if (!hasAccess) {
-            return next(new ForbiddenError('Доступ запрещен'))
-        }
-
-        return next()
+        const accessToken = await userWithRefreshTkn.generateAccessToken()
+        const refreshToken = await userWithRefreshTkn.generateRefreshToken()
+        res.cookie(
+            REFRESH_TOKEN.cookie.name,
+            refreshToken,
+            REFRESH_TOKEN.cookie.options
+        )
+        return res.json({
+            success: true,
+            user: userWithRefreshTkn,
+            accessToken,
+        })
+    } catch (error) {
+        return next(error)
     }
 }
 
-export default auth
+const getCurrentUserRoles = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = res.locals.user._id
+    try {
+        await User.findById(userId, req.body, {
+            new: true,
+        }).orFail(
+            () =>
+                new NotFoundError(
+                    'Пользователь по заданному id отсутствует в базе'
+                )
+        )
+        res.status(200).json(res.locals.user.roles)
+    } catch (error) {
+        next(error)
+    }
+}
+
+const updateCurrentUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    const userId = res.locals.user._id
+    try {
+        const updatedUser = await User.findByIdAndUpdate(userId, req.body, {
+            new: true,
+        }).orFail(
+            () =>
+                new NotFoundError(
+                    'Пользователь по заданному id отсутствует в базе'
+                )
+        )
+        res.status(200).json(updatedUser)
+    } catch (error) {
+        next(error)
+    }
+}
+
+export {
+    getCurrentUser,
+    getCurrentUserRoles,
+    login,
+    logout,
+    refreshAccessToken,
+    register,
+    updateCurrentUser,
+}
