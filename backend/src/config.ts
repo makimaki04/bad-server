@@ -9,7 +9,7 @@ export const ACCESS_TOKEN = {
     secret: process.env.AUTH_ACCESS_TOKEN_SECRET || 'secret-dev',
     expiry: process.env.AUTH_ACCESS_TOKEN_EXPIRY || '10m',
 }
-export const ORIGIN_ALLOW  = process.env.ORIGIN_ALLOW || 'http://localhost:5173';
+export const ORIGIN_ALLOW  = process.env.ORIGIN_ALLOW || 'http://localhost:5173/';
 export const JSON_BODY_LIMIT = '100kb';
 export const REQUEST_LIMIT = 40;
 export const MAX_LIMIT = 10;

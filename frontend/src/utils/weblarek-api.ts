@@ -1,5 +1,4 @@
 import { API_URL, CDN_URL } from '@constants'
-
 import {
     ICustomerPaginationResult,
     ICustomerResult,
@@ -37,33 +36,13 @@ class Api {
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
         this.options = {
+            credentials: 'include',
             headers: {
                 ...((options.headers as object) ?? {}),
+                'CSRF-Token': getCookie('csrfToken') ?? ''
             },
         }
-        this.initializeCsrfToken(options)
     }
-
-    private async initializeCsrfToken(options: RequestInit) {
-        try {
-            const response = await fetch(`${this.baseUrl}/csrf-token`, {
-                method: 'GET',
-                credentials: 'include',
-            })
-            const token = await response.json()
-
-            console.log('CSRF Token:', token)
-            this.options = {
-                headers: {
-                    ...((options.headers as object) ?? {}),
-                    'X-CSRF-Token': token || '',
-                },
-            }
-        } catch (error) {
-            console.error('Failed to fetch CSRF token:', error)
-        }
-    }
-
 
     protected handleResponse<T>(response: Response): Promise<T> {
         return response.ok
